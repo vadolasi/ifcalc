@@ -1,0 +1,144 @@
+<div class="flex w-full min-h-screen p-10 items-center justify-center">
+  <form [formGroup]="form">
+    <h1 class="text-xl font-bold">Disciplinas</h1>
+    <div class="relative overflow-x-auto shadow-md sm:rounded-lg my-5">
+      <table class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
+        <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+          <tr>
+            <th scope="col" class="px-6 py-3">
+              Nome
+            </th>
+            <th scope="col" class="px-6 py-3">
+              Tipo
+            </th>
+            <th scope="col" class="px-6 py-3">
+              Notas
+            </th>
+            <th scope="col" class="px-6 py-3">
+              Situação
+            </th>
+            <th scope="col" class="px-6 py-3">
+              Ações
+            </th>
+          </tr>
+        </thead>
+        <tbody formArrayName="disciplinas">
+          <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
+            *ngFor="let disciplina of disciplinas.controls; let i = index" [formGroupName]="i">
+            <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+              <input type="text" id="disciplina-nome-{{ i }}" formControlName="nome" placeholder="Nome da Disciplina"
+                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                required />
+            </th>
+            <td class="px-6 py-4">
+              <select id="disciplina-tipo-{{ i }}" formControlName="tipo"
+                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
+                <option value="semestral">Semestral</option>
+                <option value="anual">Anual</option>
+              </select>
+            </td>
+            <td class="px-6 py-4">
+              <div formArrayName="notas">
+                <div *ngFor="let nota of getNotas(i).controls; let j = index" [formGroupName]="j">
+                  <input min="1" max="100" step="1" id="nota-valor-{{ i }}-{{ j }}" type="number" formControlName="nota"
+                    placeholder="Nota"
+                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" />
+                </div>
+              </div>
+            </td>
+            <td class="px-6 py-4">
+              <span class="font-medium"
+                [ngClass]="{ 'text-yellow-800': getDisciplina(i).get('tipo')!.value === 'automatico', 'text-blue-800': getDisciplina(i).get('tipo')!.value === 'calculado' }">
+                {{ getSituacao(i) ? getSituacao(i)!.situacao : '-' }}
+                <br />
+                <div *ngIf="getSituacao(i) && getSituacao(i)!.media">
+                  Média necessária: {{ getSituacao(i)!.media | number: '1.0-1' }}
+                </div>
+                <div *ngIf="getSituacao(i) && getSituacao(i)!.recuperacao">
+                  Nota da prova final necessária: {{ getSituacao(i)!.recuperacao | number: '1.0-1' }}
+                </div>
+              </span>
+            </td>
+            <td class="px-6 py-4 text-right">
+              <button type="button" class="font-medium text-blue-600 dark:text-blue-500 hover:underline"
+                (click)="addNota(i)"
+                [disabled]="getDisciplina(i).get('tipo')!.value === 'semestral' ? getNotas(i).length >= 2 : getNotas(i).length >= 4"
+                [ngClass]="{ 'text-yellow-800': getDisciplina(i).get('tipo')!.value === 'automatico', 'text-blue-800': getDisciplina(i).get('tipo')!.value === 'calculado' }">
+                Adicionar Nota
+              </button>
+              <br />
+              <button type="button" class="font-medium text-red-600 dark:text-red-500 hover:underline"
+                (click)="removeNota(i, getNotas(i).length - 1)">
+                Remover Nota
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <button type="button" (click)="addDisciplina()"
+      class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800">Adicionar
+      Disciplina</button>
+    <button type="button" (click)="calcularNotas()"
+      class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800">Calcular
+      notas</button>
+    <button data-modal-target="default-modal" data-modal-toggle="default-modal"
+      class="block text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+      type="button">
+      Importar do SUAP
+    </button>
+
+    <div id="default-modal" tabindex="-1" aria-hidden="true"
+      class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full">
+      <div class="relative p-4 w-full max-w-2xl max-h-full">
+        <div class="relative bg-white rounded-lg shadow dark:bg-gray-700">
+          <div class="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600">
+            <h3 class="text-xl font-semibold text-gray-900 dark:text-white">
+              Terms of Service
+            </h3>
+            <button type="button"
+              class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white"
+              data-modal-hide="default-modal">
+              <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none"
+                viewBox="0 0 14 14">
+                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6" />
+              </svg>
+              <span class="sr-only">Close modal</span>
+            </button>
+          </div>
+          <div class="p-4 md:p-5 space-y-4">
+            <form [formGroup]="suapForm" (ngSubmit)="importar()">
+              <div class="mb-4">
+                <label for="matricula"
+                  class="block text-sm font-medium text-gray-700 dark:text-gray-400">Matrícula</label>
+                <input type="text" id="matricula" formControlName="matricula"
+                  class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                  required />
+              </div>
+              <div class="mb-4">
+                <label for="senha" class="block text-sm font-medium text-gray-700 dark:text-gray-400">Senha</label>
+                <input type="password" id="senha" formControlName="senha"
+                  class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                  required />
+              </div>
+              <div class="mb-4">
+                <label for="ano" class="block text-sm font-medium text-gray-700 dark:text-gray-400">Ano letivo</label>
+                <input type="number" id="ano" formControlName="anoLetivo"
+                  class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                  required />
+              </div>
+              <button type="submit"
+                data-modal-hide="default-modal"
+                class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">Importar</button>
+            </form>
+          </div>
+          <div class="flex items-center p-4 md:p-5 border-t border-gray-200 rounded-b dark:border-gray-600">
+            <button data-modal-hide="default-modal" type="button"
+              class="py-2.5 px-5 ms-3 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-4 focus:ring-gray-100 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">Cancelar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </form>
+</div>

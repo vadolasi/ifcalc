@@ -1,0 +1,20 @@
+{
+  "name": "ifcalc",
+  "module": "index.ts",
+  "type": "module",
+  "packageManager": "bun@1.1.38",
+  "scripts": {
+    "dev": "turbo dev"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "turbo": "^2.3.3"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "workspaces": [
+    "frontend",
+    "backend"
+  ]
+}
